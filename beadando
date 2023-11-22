@@ -1,170 +1,212 @@
 import sqlite3
 import tkinter as tk
 from tkinter import messagebox
-from datetime import datetime
 
-# Globális változók
-conn = sqlite3.connect("felhasznalok.db")
-cursor = conn.cursor()
+class Adatbaziskezeles:
+    def __init__(self, db_name):
+        self.conn = sqlite3.connect(db_name)
+        self.cursor = self.conn.cursor()
 
-def hozzaadas(username, email, add_window):
-    cursor.execute("INSERT INTO users (username, email) VALUES (?, ?)", (username, email))
-    conn.commit()
-    messagebox.showinfo("Siker", f"{username} felhasználó hozzáadva.")
-    add_window.destroy()
+    def lekerdezes(self, query, *args):
+        self.cursor.execute(query, args)
+        self.conn.commit()
 
-    # Adatok hozzáadása a .txt fájlhoz
-    with open("felhasznalok.txt", "a") as f:
-        f.write(f"{username}, {email}\n")
+    def osszes_adat_lekeres(self, query, *args):
+        self.cursor.execute(query, args)
+        return self.cursor.fetchall()
 
-    # Log fájlba írás
-    with open("log.txt", "a") as log_file:
-        log_file.write(f"{datetime.now()} - {username} felhasználó hozzáadva\n")
+class Felhasznalokezelo:
+    def __init__(self, database_manager):
+        self.db_manager = database_manager
 
-def modositas(username, new_username, email, modify_window):
-    cursor.execute("UPDATE users SET username = ?, email = ? WHERE username = ?", (new_username, email, username))
-    conn.commit()
-    messagebox.showinfo("Siker", f"{username} felhasználó módosítva.")
-    modify_window.destroy()
+    def felhasznalo_hozzaad(self, username, email):
+        self.db_manager.lekerdezes("INSERT INTO users (username, email) VALUES (?, ?)", username, email)
 
-    with open("log.txt", "a") as log_file:
-        log_file.write(f"{datetime.now()} - {username} felhasználó módosítva\n")
+    def felhasznalo_modosit(self, username, new_username, email):
+        self.db_manager.lekerdezes("UPDATE users SET username = ?, email = ? WHERE username = ?", new_username, email, username)
 
-def torles(username):
-    cursor.execute("SELECT * FROM users WHERE username = ?", (username,))
-    deleted_user = cursor.fetchone()
+    def felhasznalo_torles(self, username):
+        result = messagebox.askokcancel("Törlés megerősítése",
+                                        f"Biztosan törölni szeretnéd a(z) {username} felhasználót?")
+        if result:
+            self.db_manager.lekerdezes("DELETE FROM users WHERE username = ?", username)
+            messagebox.showinfo("Siker", f"{username} felhasználó törölve.")
+        else:
+            messagebox.showinfo("Mégse", f"A törlés megszakítva.")
 
-    if deleted_user:
-        cursor.execute("DELETE FROM users WHERE username = ?", (username,))
-        conn.commit()
-        messagebox.showinfo("Siker", f"{username} felhasználó törölve.")
+    def felhasznalok_listazasa(self):
+        return self.db_manager.osszes_adat_lekeres("SELECT * FROM users")
 
-        with open("felhasznalok.txt", "r") as f:
-            lines = f.readlines()
+class GUI:
 
-        with open("felhasznalok.txt", "w") as f:
-            for line in lines:
-                if not line.startswith(f"{username},"):
-                    f.write(line)
+    def toggle_dark_mode(self):
+        # Sötét/világos mód váltása és téma alkalmazása
+        self.dark_mode = not self.dark_mode
+        self.apply_theme()
 
-        with open("log.txt", "a") as log_file:
-            log_file.write(f"{datetime.now()} - {username} felhasználó törölve\n")
-    else:
-        messagebox.showerror("Hiba", "Nincs ilyen felhasználónév.")
+    def apply_theme(self):
+        if self.dark_mode:
+            bg_color = "black"
+            fg_color = "white"
+        else:
+            bg_color = "white"
+            fg_color = "black"
 
-def list_users():
-    cursor.execute("SELECT * FROM users")
-    users = cursor.fetchall()
-    user_list = "Felhasználók:\n"
-    for user in users:
-        user_list += str(user) + "\n"
-    messagebox.showinfo("Felhasználók listája", user_list)
+        self.root.configure(bg=bg_color)
 
-def emailhelyes(email):
-    if email.count('@') == 1 and email.count('.') >= 1 and len(email.split('.')[-1]) >= 2:
-        return True
-    else:
-        return False
+        for widget in self.root.winfo_children():
+            if isinstance(widget, tk.Button):
+                widget.destroy()  # Az előző gombot törölni kell
+                if "Felhasználó hozzáadása" in widget.cget("text"):
+                    self.add_button = tk.Button(self.buttons_frame, text="Felhasználó hozzáadása", command=self.add_user, bg="lightgreen", fg=fg_color)
+                    self.add_button.grid(row=0, column=0, padx=5, pady=5)
+                elif "Felhasználó módosítása" in widget.cget("text"):
+                    self.modify_button = tk.Button(self.buttons_frame, text="Felhasználó módosítása", command=self.modify_user, bg="cyan", fg=fg_color)
+                    self.modify_button.grid(row=0, column=1, padx=5, pady=5)
+                elif "Felhasználó törlése" in widget.cget("text"):
+                    self.delete_button = tk.Button(self.buttons_frame, text="Felhasználó törlése", command=self.delete_user, bg="lightcoral", fg=fg_color)
+                    self.delete_button.grid(row=0, column=2, padx=5, pady=5)
+                elif "Felhasználók listázása" in widget.cget("text"):
+                    self.list_button = tk.Button(self.buttons_frame, text="Felhasználók listázása", command=self.list_users, bg="darkgreen", fg=fg_color)
+                    self.list_button.grid(row=0, column=3, padx=5, pady=5)
+                elif "Kilépés" in widget.cget("text"):
+                    self.exit_button = tk.Button(self.root, text="Kilépés", command=self.root.destroy, bg="darkred", fg=fg_color)
+                    self.exit_button.pack()
+
+            elif isinstance(widget, tk.Label):
+                widget.config(bg=bg_color, fg=fg_color)
+
+    def __init__(self, user_manager):
+        self.user_manager = user_manager
+        self.dark_mode = False
+
+        self.root = tk.Tk()
+        self.root.title("Felhasználókezelő")
+
+        self.label = tk.Label(self.root, text="Válassz műveletet:")
+        self.label.pack()
+
+        self.buttons_frame = tk.Frame(self.root)
+        self.buttons_frame.pack()
+
+        self.add_button = tk.Button(self.buttons_frame, text="Felhasználó hozzáadása", command=self.add_user, bg="lightgreen", fg="black")
+        self.add_button.grid(row=0, column=0, padx=5, pady=5)
+
+        self.modify_button = tk.Button(self.buttons_frame, text="Felhasználó módosítása", command=self.modify_user, bg="cyan", fg="black")
+        self.modify_button.grid(row=0, column=1, padx=5, pady=5)
+
+        self.delete_button = tk.Button(self.buttons_frame, text="Felhasználó törlése", command=self.delete_user, bg="lightcoral", fg="black")
+        self.delete_button.grid(row=0, column=2, padx=5, pady=5)
+
+        self.list_button = tk.Button(self.buttons_frame, text="Felhasználók listázása", command=self.list_users, bg="darkgreen", fg="black")
+        self.list_button.grid(row=0, column=3, padx=5, pady=5)
+
+        self.mode_button = tk.Button(self.root, text="Mód váltás", command=self.toggle_dark_mode, bg="orange", fg="black")
+        self.mode_button.pack()
+
+        self.exit_button = tk.Button(self.root, text="Kilépés", command=self.root.destroy, bg="darkred", fg="black")
+        self.exit_button.pack()
+
+        self.root.mainloop()
+
+    def add_user(self):
+        add_window = tk.Toplevel()
+        add_window.title("Felhasználó hozzáadása")
+
+        username_label = tk.Label(add_window, text="Felhasználónév:")
+        username_label.pack()
+
+        username_entry = tk.Entry(add_window)
+        username_entry.pack()
+
+        email_label = tk.Label(add_window, text="E-mail cím:")
+        email_label.pack()
+
+        email_entry = tk.Entry(add_window)
+        email_entry.pack()
+
+        add_button = tk.Button(add_window, text="Hozzáadás", command=lambda: self.add_user_action(username_entry.get(), email_entry.get(), add_window))
+        add_button.pack()
+
+    def add_user_action(self, username, email, add_window):
+        if self.ellenoriz_email_formatum(email):
+            self.user_manager.felhasznalo_hozzaad(username, email)
+            messagebox.showinfo("Siker", f"{username} felhasználó hozzáadva.")
+            add_window.destroy()
+        else:
+            messagebox.showerror("Hiba", "Hibás e-mail formátum. Kérlek, adj meg egy érvényes e-mail címet.")
+
+    def modify_user(self):
+        modify_window = tk.Toplevel()
+        modify_window.title("Felhasználó módosítása")
+
+        username_label = tk.Label(modify_window, text="Módosítandó felhasználónév:")
+        username_label.pack()
+
+        username_entry = tk.Entry(modify_window)
+        username_entry.pack()
+
+        new_username_label = tk.Label(modify_window, text="Új felhasználónév:")
+        new_username_label.pack()
+
+        new_username_entry = tk.Entry(modify_window)
+        new_username_entry.pack()
+
+        email_label = tk.Label(modify_window, text="Új e-mail cím:")
+        email_label.pack()
+
+        email_entry = tk.Entry(modify_window)
+        email_entry.pack()
+
+        modify_button = tk.Button(modify_window, text="Módosítás", command=lambda: self.modify_user_action(username_entry.get(), new_username_entry.get(), email_entry.get(), modify_window))
+        modify_button.pack()
+
+    def modify_user_action(self, username, new_username, email, modify_window):
+        if self.ellenoriz_email_formatum(email):
+            self.user_manager.felhasznalo_modosit(username, new_username, email)
+            messagebox.showinfo("Siker", f"{username} felhasználó módosítva.")
+            modify_window.destroy()
+        else:
+            messagebox.showerror("Hiba", "Hibás e-mail formátum. Kérlek, adj meg egy érvényes e-mail címet.")
+
+    def delete_user(self):
+        delete_window = tk.Toplevel()
+        delete_window.title("Felhasználó törlése")
+
+        username_label = tk.Label(delete_window, text="Törölni kívánt felhasználónév:")
+        username_label.pack()
+
+        username_entry = tk.Entry(delete_window)
+        username_entry.pack()
+
+        delete_button = tk.Button(delete_window, text="Törlés",
+                                  command=lambda: self.felh_torl_action(username_entry.get(), delete_window))
+
+        delete_button.pack()
+
+    def felh_torl_action(self, username, delete_window):
+        result = self.user_manager.felhasznalo_torles(username)
+        if result:
+            messagebox.showinfo("Siker", f"{username} felhasználó törölve.")
+            delete_window.destroy()
+
+    def list_users(self):
+        users = self.user_manager.felhasznalok_listazasa()
+        user_list = "Felhasználók:\n"
+        for user in users:
+            user_list += str(user) + "\n"
+        messagebox.showinfo("Felhasználók listája", user_list)
+
+    def ellenoriz_email_formatum(self, email):
+        if email.count('@') == 1 and email.count('.') >= 1 and len(email.split('.')[-1]) >= 2:
+            return True
+        else:
+            return False
 
 def main():
-    root = tk.Tk()
-    root.title("Felhasználókezelő")
-
-    label = tk.Label(root, text="Válassz műveletet:")
-    label.pack()
-
-    buttons_frame = tk.Frame(root)
-    buttons_frame.pack()
-
-    add_button = tk.Button(buttons_frame, text="Felhasználó hozzáadása", command=add_user)
-    add_button.grid(row=0, column=0, padx=5, pady=5)
-
-    modify_button = tk.Button(buttons_frame, text="Felhasználó módosítása", command=modify_user)
-    modify_button.grid(row=0, column=1, padx=5, pady=5)
-
-    delete_button = tk.Button(buttons_frame, text="Felhasználó törlése", command=delete_user)
-    delete_button.grid(row=0, column=2, padx=5, pady=5)
-
-    list_button = tk.Button(buttons_frame, text="Felhasználók listázása", command=list_users)
-    list_button.grid(row=0, column=3, padx=5, pady=5)
-
-    exit_button = tk.Button(root, text="Kilépés", command=root.destroy)
-    exit_button.pack()
-
-    root.mainloop()
-
-def add_user():
-    add_window = tk.Toplevel()
-    add_window.title("Felhasználó hozzáadása")
-
-    username_label = tk.Label(add_window, text="Felhasználónév:")
-    username_label.pack()
-
-    username_entry = tk.Entry(add_window)
-    username_entry.pack()
-
-    email_label = tk.Label(add_window, text="E-mail cím:")
-    email_label.pack()
-
-    email_entry = tk.Entry(add_window)
-    email_entry.pack()
-
-    add_button = tk.Button(add_window, text="Hozzáadás", command=lambda: add_user_action(username_entry.get(), email_entry.get(), add_window))
-    add_button.pack()
-
-def add_user_action(username, email, add_window):
-    if emailhelyes(email):
-        hozzaadas(username, email, add_window)
-    else:
-        messagebox.showerror("Hiba", "Hibás e-mail formátum. Kérlek, adj meg egy érvényes e-mail címet.")
-
-def modify_user():
-    modify_window = tk.Toplevel()
-    modify_window.title("Felhasználó módosítása")
-
-    username_label = tk.Label(modify_window, text="Módosítandó felhasználónév:")
-    username_label.pack()
-
-    username_entry = tk.Entry(modify_window)
-    username_entry.pack()
-
-    new_username_label = tk.Label(modify_window, text="Új felhasználónév:")
-    new_username_label.pack()
-
-    new_username_entry = tk.Entry(modify_window)
-    new_username_entry.pack()
-
-    email_label = tk.Label(modify_window, text="Új e-mail cím:")
-    email_label.pack()
-
-    email_entry = tk.Entry(modify_window)
-    email_entry.pack()
-
-    modify_button = tk.Button(modify_window, text="Módosítás", command=lambda: modify_user_action(username_entry.get(), new_username_entry.get(), email_entry.get(), modify_window))
-    modify_button.pack()
-
-def modify_user_action(username, new_username, email, modify_window):
-    if emailhelyes(email):
-        modositas(username, new_username, email, modify_window)
-    else:
-        messagebox.showerror("Hiba", "Hibás e-mail formátum. Kérlek, adj meg egy érvényes e-mail címet.")
-
-def delete_user():
-    delete_window = tk.Toplevel()
-    delete_window.title("Felhasználó törlése")
-
-    username_label = tk.Label(delete_window, text="Törölni kívánt felhasználónév:")
-    username_label.pack()
-
-    username_entry = tk.Entry(delete_window)
-    username_entry.pack()
-
-    delete_button = tk.Button(delete_window, text="Törlés", command=lambda: delete_user_action(username_entry.get()))
-    delete_button.pack()
-
-def delete_user_action(username):
-    torles(username)
+    db_manager = Adatbaziskezeles("felhasznalok.db")
+    user_manager = Felhasznalokezelo(db_manager)
+    gui = GUI(user_manager)
 
 if __name__ == "__main__":
-    # Itt indul az alkalmazás
     main()
