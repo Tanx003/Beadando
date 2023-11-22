@@ -15,4 +15,12 @@ Felhasznált modulok, függvények:
     __init__
     modvaltas() -> A sötét/világos mód közötti váltás
     tema() -> Téma alkalmazása
-    felhasznalo_hozzaadas
+    felhasznalo_hozzaadas() -> Felhasználó hozzáadása gomb eseménykezelője
+    felh_hozza_action() -> Felhasználó hozzáadása gomb művelete
+    felhasznalo_modositas() -> Felhasználó módosítása gomb eseménykezelője
+    felh_mod_action() -> Felhasználó módosítása gomb művelete
+    felhasznalo_torles() -> Felhasználó törlése gomb eseménykezelője
+    felh_torl_action() -> Felhasználó törlése gomb művelete
+    felhasznalo_lista() -> Felhasználók listázása gomb eseménykezelője
+    emailhelyes() -> Ellenőrzi az e-mail cím formátumát
+    main() -> A főprogram, a GUI létrehozása és futtatása
