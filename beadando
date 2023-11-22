@@ -39,12 +39,12 @@ class Felhasznalokezelo:
 
 class GUI:
 
-    def toggle_dark_mode(self):
+    def sotet_vilagos(self):
         # Sötét/világos mód váltása és téma alkalmazása
         self.dark_mode = not self.dark_mode
-        self.apply_theme()
+        self.tema()
 
-    def apply_theme(self):
+    def tema(self):
         if self.dark_mode:
             bg_color = "black"
             fg_color = "white"
@@ -58,16 +58,16 @@ class GUI:
             if isinstance(widget, tk.Button):
                 widget.destroy()  # Az előző gombot törölni kell
                 if "Felhasználó hozzáadása" in widget.cget("text"):
-                    self.add_button = tk.Button(self.buttons_frame, text="Felhasználó hozzáadása", command=self.add_user, bg="lightgreen", fg=fg_color)
+                    self.add_button = tk.Button(self.buttons_frame, text="Felhasználó hozzáadása", command=self.gui_felhaszn_hozzaad, bg="lightgreen", fg=fg_color)
                     self.add_button.grid(row=0, column=0, padx=5, pady=5)
                 elif "Felhasználó módosítása" in widget.cget("text"):
-                    self.modify_button = tk.Button(self.buttons_frame, text="Felhasználó módosítása", command=self.modify_user, bg="cyan", fg=fg_color)
+                    self.modify_button = tk.Button(self.buttons_frame, text="Felhasználó módosítása", command=self.gui_felhaszn_modosit, bg="cyan", fg=fg_color)
                     self.modify_button.grid(row=0, column=1, padx=5, pady=5)
                 elif "Felhasználó törlése" in widget.cget("text"):
-                    self.delete_button = tk.Button(self.buttons_frame, text="Felhasználó törlése", command=self.delete_user, bg="lightcoral", fg=fg_color)
+                    self.delete_button = tk.Button(self.buttons_frame, text="Felhasználó törlése", command=self.gui_felhaszn_torol, bg="lightcoral", fg=fg_color)
                     self.delete_button.grid(row=0, column=2, padx=5, pady=5)
                 elif "Felhasználók listázása" in widget.cget("text"):
-                    self.list_button = tk.Button(self.buttons_frame, text="Felhasználók listázása", command=self.list_users, bg="darkgreen", fg=fg_color)
+                    self.list_button = tk.Button(self.buttons_frame, text="Felhasználók listázása", command=self.gui_felhaszn_lista, bg="darkgreen", fg=fg_color)
                     self.list_button.grid(row=0, column=3, padx=5, pady=5)
                 elif "Kilépés" in widget.cget("text"):
                     self.exit_button = tk.Button(self.root, text="Kilépés", command=self.root.destroy, bg="darkred", fg=fg_color)
@@ -89,19 +89,19 @@ class GUI:
         self.buttons_frame = tk.Frame(self.root)
         self.buttons_frame.pack()
 
-        self.add_button = tk.Button(self.buttons_frame, text="Felhasználó hozzáadása", command=self.add_user, bg="lightgreen", fg="black")
+        self.add_button = tk.Button(self.buttons_frame, text="Felhasználó hozzáadása", command=self.gui_felhaszn_hozzaad, bg="lightgreen", fg="black")
         self.add_button.grid(row=0, column=0, padx=5, pady=5)
 
-        self.modify_button = tk.Button(self.buttons_frame, text="Felhasználó módosítása", command=self.modify_user, bg="cyan", fg="black")
+        self.modify_button = tk.Button(self.buttons_frame, text="Felhasználó módosítása", command=self.gui_felhaszn_modosit, bg="cyan", fg="black")
         self.modify_button.grid(row=0, column=1, padx=5, pady=5)
 
-        self.delete_button = tk.Button(self.buttons_frame, text="Felhasználó törlése", command=self.delete_user, bg="lightcoral", fg="black")
+        self.delete_button = tk.Button(self.buttons_frame, text="Felhasználó törlése", command=self.gui_felhaszn_torol, bg="lightcoral", fg="black")
         self.delete_button.grid(row=0, column=2, padx=5, pady=5)
 
-        self.list_button = tk.Button(self.buttons_frame, text="Felhasználók listázása", command=self.list_users, bg="darkgreen", fg="black")
+        self.list_button = tk.Button(self.buttons_frame, text="Felhasználók listázása", command=self.gui_felhaszn_lista, bg="darkgreen", fg="black")
         self.list_button.grid(row=0, column=3, padx=5, pady=5)
 
-        self.mode_button = tk.Button(self.root, text="Mód váltás", command=self.toggle_dark_mode, bg="orange", fg="black")
+        self.mode_button = tk.Button(self.root, text="Mód váltás", command=self.sotet_vilagos, bg="orange", fg="black")
         self.mode_button.pack()
 
         self.exit_button = tk.Button(self.root, text="Kilépés", command=self.root.destroy, bg="darkred", fg="black")
@@ -109,7 +109,7 @@ class GUI:
 
         self.root.mainloop()
 
-    def add_user(self):
+    def gui_felhaszn_hozzaad(self):
         add_window = tk.Toplevel()
         add_window.title("Felhasználó hozzáadása")
 
@@ -125,18 +125,18 @@ class GUI:
         email_entry = tk.Entry(add_window)
         email_entry.pack()
 
-        add_button = tk.Button(add_window, text="Hozzáadás", command=lambda: self.add_user_action(username_entry.get(), email_entry.get(), add_window))
+        add_button = tk.Button(add_window, text="Hozzáadás", command=lambda: self.gui_felh_hozz_action(username_entry.get(), email_entry.get(), add_window))
         add_button.pack()
 
-    def add_user_action(self, username, email, add_window):
-        if self.ellenoriz_email_formatum(email):
+    def gui_felh_hozz_action(self, username, email, add_window):
+        if self.emailhelyes(email):
             self.user_manager.felhasznalo_hozzaad(username, email)
             messagebox.showinfo("Siker", f"{username} felhasználó hozzáadva.")
             add_window.destroy()
         else:
             messagebox.showerror("Hiba", "Hibás e-mail formátum. Kérlek, adj meg egy érvényes e-mail címet.")
 
-    def modify_user(self):
+    def gui_felhaszn_modosit(self):
         modify_window = tk.Toplevel()
         modify_window.title("Felhasználó módosítása")
 
@@ -158,18 +158,18 @@ class GUI:
         email_entry = tk.Entry(modify_window)
         email_entry.pack()
 
-        modify_button = tk.Button(modify_window, text="Módosítás", command=lambda: self.modify_user_action(username_entry.get(), new_username_entry.get(), email_entry.get(), modify_window))
+        modify_button = tk.Button(modify_window, text="Módosítás", command=lambda: self.gui_felh_mod_action(username_entry.get(), new_username_entry.get(), email_entry.get(), modify_window))
         modify_button.pack()
 
-    def modify_user_action(self, username, new_username, email, modify_window):
-        if self.ellenoriz_email_formatum(email):
+    def gui_felh_mod_action(self, username, new_username, email, modify_window):
+        if self.emailhelyes(email):
             self.user_manager.felhasznalo_modosit(username, new_username, email)
             messagebox.showinfo("Siker", f"{username} felhasználó módosítva.")
             modify_window.destroy()
         else:
             messagebox.showerror("Hiba", "Hibás e-mail formátum. Kérlek, adj meg egy érvényes e-mail címet.")
 
-    def delete_user(self):
+    def gui_felhaszn_torol(self):
         delete_window = tk.Toplevel()
         delete_window.title("Felhasználó törlése")
 
@@ -180,24 +180,24 @@ class GUI:
         username_entry.pack()
 
         delete_button = tk.Button(delete_window, text="Törlés",
-                                  command=lambda: self.felh_torl_action(username_entry.get(), delete_window))
+                                  command=lambda: self.gui_felhaszn_torol_action(username_entry.get(), delete_window))
 
         delete_button.pack()
 
-    def felh_torl_action(self, username, delete_window):
+    def gui_felhaszn_torol_action(self, username, delete_window):
         result = self.user_manager.felhasznalo_torles(username)
         if result:
             messagebox.showinfo("Siker", f"{username} felhasználó törölve.")
             delete_window.destroy()
 
-    def list_users(self):
+    def gui_felhaszn_lista(self):
         users = self.user_manager.felhasznalok_listazasa()
         user_list = "Felhasználók:\n"
         for user in users:
             user_list += str(user) + "\n"
         messagebox.showinfo("Felhasználók listája", user_list)
 
-    def ellenoriz_email_formatum(self, email):
+    def emailhelyes(self, email):
         if email.count('@') == 1 and email.count('.') >= 1 and len(email.split('.')[-1]) >= 2:
             return True
         else:
