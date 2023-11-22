@@ -11,13 +11,13 @@ def hozzaadas(username, email, add_window):
     cursor.execute("INSERT INTO users (username, email) VALUES (?, ?)", (username, email))
     conn.commit()
     messagebox.showinfo("Siker", f"{username} felhasználó hozzáadva.")
-    add_window.destroy()  # Az ablak bezárása a hozzáadás után
+    add_window.destroy()
 
     # Adatok hozzáadása a .txt fájlhoz
     with open("felhasznalok.txt", "a") as f:
         f.write(f"{username}, {email}\n")
 
-    # Log információ hozzáadása a log fájlhoz
+    # Log fájlba írás
     with open("log.txt", "a") as log_file:
         log_file.write(f"{datetime.now()} - {username} felhasználó hozzáadva\n")
 
@@ -25,14 +25,12 @@ def modositas(username, new_username, email, modify_window):
     cursor.execute("UPDATE users SET username = ?, email = ? WHERE username = ?", (new_username, email, username))
     conn.commit()
     messagebox.showinfo("Siker", f"{username} felhasználó módosítva.")
-    modify_window.destroy()  # Az ablak bezárása a módosítás után
+    modify_window.destroy()
 
-    # Log információ hozzáadása a log fájlhoz
     with open("log.txt", "a") as log_file:
         log_file.write(f"{datetime.now()} - {username} felhasználó módosítva\n")
 
 def torles(username):
-    # Felhasználó adatainak lekérése törlés előtt
     cursor.execute("SELECT * FROM users WHERE username = ?", (username,))
     deleted_user = cursor.fetchone()
 
@@ -41,7 +39,6 @@ def torles(username):
         conn.commit()
         messagebox.showinfo("Siker", f"{username} felhasználó törölve.")
 
-        # Felhasználó törlése a .txt fájlból
         with open("felhasznalok.txt", "r") as f:
             lines = f.readlines()
 
@@ -50,7 +47,6 @@ def torles(username):
                 if not line.startswith(f"{username},"):
                     f.write(line)
 
-        # Log információ hozzáadása a log fájlhoz
         with open("log.txt", "a") as log_file:
             log_file.write(f"{datetime.now()} - {username} felhasználó törölve\n")
     else:
@@ -64,9 +60,7 @@ def list_users():
         user_list += str(user) + "\n"
     messagebox.showinfo("Felhasználók listája", user_list)
 
-def ellenoriz_email_formatum(email):
-    # Az email címnek tartalmaznia kell legalább egy "@" karaktert és legalább egy "."
-    # karaktert az utána következő három karakterrel.
+def emailhelyes(email):
     if email.count('@') == 1 and email.count('.') >= 1 and len(email.split('.')[-1]) >= 2:
         return True
     else:
@@ -119,7 +113,7 @@ def add_user():
     add_button.pack()
 
 def add_user_action(username, email, add_window):
-    if ellenoriz_email_formatum(email):
+    if emailhelyes(email):
         hozzaadas(username, email, add_window)
     else:
         messagebox.showerror("Hiba", "Hibás e-mail formátum. Kérlek, adj meg egy érvényes e-mail címet.")
@@ -150,7 +144,7 @@ def modify_user():
     modify_button.pack()
 
 def modify_user_action(username, new_username, email, modify_window):
-    if ellenoriz_email_formatum(email):
+    if emailhelyes(email):
         modositas(username, new_username, email, modify_window)
     else:
         messagebox.showerror("Hiba", "Hibás e-mail formátum. Kérlek, adj meg egy érvényes e-mail címet.")
@@ -172,5 +166,5 @@ def delete_user_action(username):
     torles(username)
 
 if __name__ == "__main__":
-    # Alkalmazás indítása
+    # Itt indul az alkalmazás
     main()
