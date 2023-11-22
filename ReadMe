@@ -1,0 +1,18 @@
+Krizsán Adrián - IMU2S1
+Feladat leírása: Egy felhasználó-kezelő és -nyilvántartó alkalmazás
+Felhasznált modulok, függvények:
+  ADATBÁZIS OSZTÁLY
+    __init__
+    lekerdezes() -> Lekérdezi az adatbázist.
+    osszes_adat_lekeres() -> Lekérdezi az összes adatot.
+  FELHASZNÁLÓ-KEZELŐ OSZTÁLY
+    __init__
+    felhasznalo_hozzaad() -> Felhasználó hozzáadása az adatbázishoz.
+    felhasznalo_modosit() -> Felhasználó módosítása az adatbázisban.
+    felhasznalo_torles()  -> Felhasználó törlése az adatbázisból
+    felhasznalok_listazasa() -> Felhasználók kilistázása
+  GUI OSZTÁLY
+    __init__
+    modvaltas() -> A sötét/világos mód közötti váltás
+    tema() -> Téma alkalmazása
+    felhasznalo_hozzaadas
