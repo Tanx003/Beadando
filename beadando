@@ -2,10 +2,24 @@ import sqlite3
 import tkinter as tk
 from tkinter import messagebox
 
+
+
 class Adatbaziskezeles:
     def __init__(self, db_name):
         self.conn = sqlite3.connect(db_name)
         self.cursor = self.conn.cursor()
+        self.tabla_letrehoz()
+
+    def tabla_letrehoz(self):
+        # Tábla létrehozása, ha még nem létezik
+        create_table_query = '''
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT NOT NULL,
+            email TEXT NOT NULL
+        );
+        '''
+        self.lekerdezes(create_table_query)
 
     def lekerdezes(self, query, *args):
         self.cursor.execute(query, args)
@@ -14,6 +28,22 @@ class Adatbaziskezeles:
     def osszes_adat_lekeres(self, query, *args):
         self.cursor.execute(query, args)
         return self.cursor.fetchall()
+
+    def felhasznalo_hozzaad_log(self, username, email):
+        self.lekerdezes("INSERT INTO users (username, email) VALUES (?, ?)", username, email)
+        self.logolas(f"{username} felhasználó hozzáadva.")
+
+    def felhasznalo_modosit_log(self, username, new_username, email):
+        self.lekerdezes("UPDATE users SET username = ?, email = ? WHERE username = ?", new_username, email, username)
+        self.logolas(f"{username} felhasználó módosítva.")
+
+    def felhasznalo_torles_log(self, username):
+        self.lekerdezes("DELETE FROM users WHERE username = ?", username)
+        self.logolas(f"{username} felhasználó törölve.")
+
+    def logolas(self, uzenet):
+        with open("log.txt", "a") as log_file:
+            log_file.write(f"{uzenet}\n")
 
 class Felhasznalokezelo:
     def __init__(self, database_manager):
@@ -56,21 +86,30 @@ class GUI:
 
         for widget in self.root.winfo_children():
             if isinstance(widget, tk.Button):
+                # Csak akkor hozd létre az új gombot, ha még nem létezik
+                if widget not in self.buttons:
+                    continue
+
                 widget.destroy()  # Az előző gombot törölni kell
                 if "Felhasználó hozzáadása" in widget.cget("text"):
-                    self.add_button = tk.Button(self.buttons_frame, text="Felhasználó hozzáadása", command=self.gui_felhaszn_hozzaad, bg="lightgreen", fg=fg_color)
+                    self.add_button = tk.Button(self.buttons_frame, text="Felhasználó hozzáadása",
+                                                command=self.gui_felhaszn_hozzaad, bg="lightgreen", fg=fg_color)
                     self.add_button.grid(row=0, column=0, padx=5, pady=5)
                 elif "Felhasználó módosítása" in widget.cget("text"):
-                    self.modify_button = tk.Button(self.buttons_frame, text="Felhasználó módosítása", command=self.gui_felhaszn_modosit, bg="cyan", fg=fg_color)
+                    self.modify_button = tk.Button(self.buttons_frame, text="Felhasználó módosítása",
+                                                   command=self.gui_felhaszn_modosit, bg="cyan", fg=fg_color)
                     self.modify_button.grid(row=0, column=1, padx=5, pady=5)
                 elif "Felhasználó törlése" in widget.cget("text"):
-                    self.delete_button = tk.Button(self.buttons_frame, text="Felhasználó törlése", command=self.gui_felhaszn_torol, bg="lightcoral", fg=fg_color)
+                    self.delete_button = tk.Button(self.buttons_frame, text="Felhasználó törlése",
+                                                   command=self.gui_felhaszn_torol, bg="lightcoral", fg=fg_color)
                     self.delete_button.grid(row=0, column=2, padx=5, pady=5)
                 elif "Felhasználók listázása" in widget.cget("text"):
-                    self.list_button = tk.Button(self.buttons_frame, text="Felhasználók listázása", command=self.gui_felhaszn_lista, bg="darkgreen", fg=fg_color)
+                    self.list_button = tk.Button(self.buttons_frame, text="Felhasználók listázása",
+                                                 command=self.gui_felhaszn_lista, bg="darkgreen", fg=fg_color)
                     self.list_button.grid(row=0, column=3, padx=5, pady=5)
                 elif "Kilépés" in widget.cget("text"):
-                    self.exit_button = tk.Button(self.root, text="Kilépés", command=self.root.destroy, bg="darkred", fg=fg_color)
+                    self.exit_button = tk.Button(self.root, text="Kilépés", command=self.root.destroy, bg="darkred",
+                                                 fg=fg_color)
                     self.exit_button.pack()
 
             elif isinstance(widget, tk.Label):
@@ -106,6 +145,8 @@ class GUI:
 
         self.exit_button = tk.Button(self.root, text="Kilépés", command=self.root.destroy, bg="darkred", fg="black")
         self.exit_button.pack()
+
+        self.buttons = [self.add_button, self.modify_button, self.delete_button, self.list_button]
 
         self.root.mainloop()
 
